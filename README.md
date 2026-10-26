@@ -4,7 +4,7 @@ Utilities for emergency-management workflows.
 
 ## CTR File Renamer
 
-Open `ctr-renamer/index.html` in Chrome or Edge, or use the GitHub Pages site.
+Open `ctr-renamer.html` in Chrome or Edge, or use the GitHub Pages site.
 
 1. Add completed fillable CTR PDFs.
 2. Review employee names and work dates.
@@ -20,7 +20,7 @@ The utility runs entirely in the browser without accounts or network requests. I
 
 ## GitHub Pages
 
-Enable Pages from the default branch, root directory. `index.html` is the tool directory; `ctr-renamer/index.html` is the self-contained application.
+Enable Pages from the default branch, root directory. `index.html` is the tool directory; `ctr-renamer.html` is the self-contained application.
 
 ## Third-party software
 
