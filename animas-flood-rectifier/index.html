@@ -166,7 +166,7 @@ kbd{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border
         <canvas id="mapCv" aria-label="Map canvas"></canvas>
         <div class="readout" id="mapRead">ft —</div>
         <div class="zoom"><button data-z="map" data-d="1" aria-label="Zoom in map">+</button><button data-z="map" data-d="-1" aria-label="Zoom out map">−</button><button data-z="map" data-d="0" aria-label="Fit map">⤢</button></div>
-        <div class="empty" id="mapEmpty"><div><strong>No county layers loaded yet</strong><p>The page can't reach gis.lpcgov.org directly, so load the Structures 2015 query results once from the County data tab.</p><button class="btn primary" id="goData">Open County data</button></div></div>
+        <div class="empty" id="mapEmpty"><div><strong>No county layers loaded yet</strong><p>Live county GIS layers load automatically. Open County data to check loading status or retry.</p><button class="btn primary" id="goData">Open County data</button></div></div>
       </div>
     </section>
   </main>
@@ -200,11 +200,11 @@ kbd{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border
       </table></div>
     </div>
     <div class="panel" id="tab-data" hidden>
-      <p class="note">Open each link (it returns raw JSON from the county server), then either save it and drop the file on the row, or click the row and paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>. Several tiles per layer merge. The server caps each request at 2,000 features; the row warns if a tile hit the cap.</p>
+      <p class="note">Live layers load automatically from La Plata County Operational Layers for the area below. Refresh after changing the area. Queries fetch feature IDs first, then load every matching feature in batches. File import and paste remain available as a fallback.</p>
       <div class="bbox toolbar">
         <span class="muted">Area (WGS84)</span>
         W <input id="bbW" value="-107.905"> S <input id="bbS" value="37.285"> E <input id="bbE" value="-107.835"> N <input id="bbN" value="37.400">
-        Tiles <select id="bbSplit"><option value="1">1</option><option value="2" selected>2 × 2</option><option value="3">3 × 3</option></select>
+        <button class="btn primary" id="refreshCounty">Refresh live data</button> Query links <select id="bbSplit"><option value="1">1</option><option value="2" selected>2 × 2</option><option value="3">3 × 3</option></select>
       </div>
       <div class="layers" id="layerRows"></div>
     </div>
@@ -286,12 +286,14 @@ const photos=[
   {key:'DSC07799',name:'DSC07799.jpg',url:'DSC07799.jpg',pairs:[],traces:[]},
 ];
 let cur=0, mode='pair', pending=null, selCp=null, activeTrace=null, uid=1;
+const GIS_ROOT='https://gis.lpcgov.org/arcgis/rest/services/Operational_Layers/';
 const LAYERS=[
-  {id:'structures',lid:16,label:'Structures 2015',hint:'Snap targets. Required.',geom:'poly',data:null,files:0,capped:false},
-  {id:'roads',lid:2,label:'Roads',hint:'Orientation.',geom:'line',data:null,files:0,capped:false},
-  {id:'rivers',lid:5,label:'Lakes and Rivers',hint:'Orientation.',geom:'poly',data:null,files:0,capped:false},
-  {id:'flood',lid:66,label:'2010 FEMA Floodplain',hint:'Compare to traced extent.',geom:'poly',data:null,files:0,capped:false},
-];
+  {id:'structures',service:'Structures',lid:2,label:'Structures 2025',hint:'Building corners and snap targets.',geom:'poly'},
+  {id:'roads',service:'Transportation_and_Engineering',lid:5,label:'Roads',hint:'Orientation.',geom:'line'},
+  {id:'rivers',service:'Hydrology',lid:3,label:'Lakes and Rivers',hint:'Orientation.',geom:'poly'},
+  {id:'flood',service:'FEMA_Floodplain',lid:4,label:'2024 FEMA Floodplain',hint:'Compare to traced extent.',geom:'poly'},
+].map(L=>({...L,data:null,files:0,capped:false,loading:false,error:'',liveAt:null}));
+const layerUrl=L=>`${GIS_ROOT}${L.service}/MapServer/${L.lid}`;
 let pasteTarget=null;
 
 function loadState(){try{const s=JSON.parse(localStorage.getItem(STORE_KEY)||'null');if(!s)return;
@@ -370,7 +372,7 @@ function mergeLayer(L,parsed){
   for(const a of parts)for(let i=0;i<a.length;i+=2){const x=a[i],y=a[i+1];if(x<bb[0])bb[0]=x;if(y<bb[1])bb[1]=y;if(x>bb[2])bb[2]=x;if(y>bb[3])bb[3]=y;}
   L.data={parts,bbox:bb};L.files++;L.capped=L.capped||parsed.capped;L.count=(L.count||0)+parsed.count;
   buildLayerCache(L);
-  IDB.put('layer:'+L.id,{parts:parts.map(a=>Array.from(a)),files:L.files,capped:L.capped,count:L.count});
+  IDB.put('operational:'+L.service+':'+L.lid,{parts:parts.map(a=>Array.from(a)),files:L.files,capped:L.capped,count:L.count});
 }
 function buildLayerCache(L){
   const path=new Path2D();
@@ -382,7 +384,7 @@ function buildLayerCache(L){
   }
   L.photoPath=null; // invalidated
 }
-function clearLayer(L){L.data=null;L.path=null;L.grid=null;L.files=0;L.capped=false;L.count=0;L.photoPath=null;IDB.put('layer:'+L.id,null);}
+function clearLayer(L){L.data=null;L.path=null;L.grid=null;L.files=0;L.capped=false;L.count=0;L.photoPath=null;IDB.put('operational:'+L.service+':'+L.lid,null);}
 function snapStructure(X,Y,tolFt){const L=LAYERS[0];if(!L.grid)return null;const cs=L.cell;let best=null,bd=tolFt*tolFt;
   const x0=Math.floor((X-tolFt)/cs),x1=Math.floor((X+tolFt)/cs),y0=Math.floor((Y-tolFt)/cs),y1=Math.floor((Y+tolFt)/cs);
   for(let i=x0;i<=x1;i++)for(let j=y0;j<=y1;j++){const b=L.grid.get(i+','+j);if(!b)continue;for(let k=0;k<b.length;k+=2){const d=(b[k]-X)**2+(b[k+1]-Y)**2;if(d<bd){bd=d;best=[b[k],b[k+1]];}}}
@@ -618,24 +620,88 @@ function finishTrace(){const p=P();if(!activeTrace)return;if(activeTrace.pts.len
 function queryUrls(L){const W=+$('bbW').value,S=+$('bbS').value,E=+$('bbE').value,N=+$('bbN').value,k=+$('bbSplit').value;const out=[];
   for(let j=0;j<k;j++)for(let i=0;i<k;i++){const w=W+(E-W)*i/k,e=W+(E-W)*(i+1)/k,s=S+(N-S)*j/k,n=S+(N-S)*(j+1)/k;
     const q=new URLSearchParams({where:'1=1',geometry:[w,s,e,n].map(v=>v.toFixed(4)).join(','),geometryType:'esriGeometryEnvelope',inSR:'4326',spatialRel:'esriSpatialRelIntersects',outFields:'*',returnGeometry:'true',outSR:'2233',geometryPrecision:'2',f:'json'});
-    out.push({label:k===1?'all':`${String.fromCharCode(65+j)}${i+1}`,url:`https://gis.lpcgov.org/arcgis/rest/services/JS_website/MapLayersCitizenserve/MapServer/${L.lid}/query?${q}`});}
+    out.push({label:k===1?'all':`${String.fromCharCode(65+j)}${i+1}`,url:`${layerUrl(L)}/query?${q}`});}
   return out;}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function renderLayers(){const box=$('layerRows');box.textContent='';
   LAYERS.forEach(L=>{const row=document.createElement('div');row.className='layer row-focus';row.tabIndex=0;row.dataset.id=L.id;
-    const st=L.data?`<span class="err-good">${L.count.toLocaleString()} features · ${L.files} file${L.files>1?'s':''}</span>${L.capped?' <span class="err-warn">· a tile hit the 2,000 cap, split smaller</span>':''}`:'<span class="muted">not loaded</span>';
-    row.innerHTML=`<div><b>${L.label}</b> <span class="muted mono">(${L.lid})</span><div class="muted" style="font-size:12px">${L.hint}</div></div>
-      <div style="min-width:0"><div class="links">${queryUrls(L).map(u=>`<a href="${u.url}" target="_blank" rel="noopener">${u.label}</a>`).join('')}</div><div class="state">${st}</div></div>
-      <div class="toolbar" style="margin:0"><button class="btn small" data-act="load">Load files</button>${L.data?'<button class="btn small" data-act="clear">Clear</button>':''}</div>`;
+    let st=L.loading?'<span class="muted">Loading live county data…</span>':(L.data||L.liveAt)?`<span class="err-good">${L.count.toLocaleString()} features · ${L.liveAt?'live '+L.liveAt.toLocaleTimeString():'imported'}</span>${L.capped?' <span class="err-warn">· incomplete import</span>':''}`:'<span class="muted">not loaded</span>';
+    if(L.error)st+=` <span class="err-bad">${escapeHtml(L.error)}${L.data?' · previous data retained':''}</span>`;
+    row.innerHTML=`<div><b>${L.label}</b><div class="muted" style="font-size:12px">${L.hint}</div></div>
+      <div style="min-width:0"><div class="links"><a href="${layerUrl(L)}" target="_blank" rel="noopener">Live source</a> ${queryUrls(L).map(u=>`<a href="${u.url}" target="_blank" rel="noopener">${u.label}</a>`).join('')}</div><div class="state">${st}</div></div>
+      <div class="toolbar" style="margin:0"><button class="btn small" data-act="live" ${L.loading?'disabled':''}>${L.loading?'Loading…':'Refresh live'}</button><button class="btn small" data-act="load" ${L.loading?'disabled':''}>Load files</button>${L.data?`<button class="btn small" data-act="clear" ${L.loading?'disabled':''}>Clear</button>`:''}</div>`;
     row.addEventListener('click',ev=>{pasteTarget=L;document.querySelectorAll('.layer').forEach(r=>r.style.borderColor='');row.style.borderColor='var(--accent)';
-      const act=ev.target.closest('[data-act]')?.dataset.act;if(act==='load'){$('layerFile').dataset.target=L.id;$('layerFile').click();}if(act==='clear'){clearLayer(L);P().overlayPath=null;renderLayers();drawAll();}});
+      const act=ev.target.closest('[data-act]')?.dataset.act;if(act==='live')loadLiveLayer(L);if(act==='load'){$('layerFile').dataset.target=L.id;$('layerFile').click();}if(act==='clear'){clearLayer(L);L.liveAt=null;L.error='';for(const p of photos)p.overlayPath=null;renderLayers();drawAll();}});
     row.addEventListener('dragover',ev=>{ev.preventDefault();row.classList.add('drop');});
     row.addEventListener('dragleave',()=>row.classList.remove('drop'));
-    row.addEventListener('drop',ev=>{ev.preventDefault();row.classList.remove('drop');readLayerFiles(L,[...ev.dataTransfer.files]);});
+    row.addEventListener('drop',ev=>{ev.preventDefault();row.classList.remove('drop');if(!L.loading)readLayerFiles(L,[...ev.dataTransfer.files]);});
     box.appendChild(row);});
-  $('nData').textContent=LAYERS.filter(l=>l.data).length+'/4';}
+  $('nData').textContent=LAYERS.filter(l=>l.data).length+'/4';
+  $('refreshCounty').disabled=LAYERS.some(l=>l.loading);
+}
+// ArcGIS supports JSONP for public read-only queries when browser CORS is unavailable.
+let gisRequestId=0;
+function gisJsonp(url){return new Promise((resolve,reject)=>{
+  const name='afrGis'+(++gisRequestId),script=document.createElement('script');
+  const cleanup=()=>{clearTimeout(timer);script.remove();delete window[name];};
+  const timer=setTimeout(()=>{cleanup();reject(new Error('County GIS request timed out. Try Refresh live.'));},30000);
+  window[name]=data=>{cleanup();resolve(data);};
+  script.onerror=()=>{cleanup();reject(new Error('Cannot reach county GIS. Try Refresh live.'));};
+  const u=new URL(url);u.searchParams.set('callback',name);script.src=u.href;document.head.appendChild(script);
+});}
+async function gisRequest(url){
+  let data;
+  try{const response=await fetch(url,{signal:AbortSignal.timeout(15000)});if(!response.ok)throw new Error('HTTP '+response.status);data=await response.json();}
+  catch(e){data=await gisJsonp(url);}
+  if(data.error)throw new Error(data.error.message||'County GIS query failed.');
+  return data;
+}
+function countyArea(){
+  const bounds=['bbW','bbS','bbE','bbN'].map(id=>Number($(id).value));
+  const[w,s,e,n]=bounds;
+  if(!bounds.every(Number.isFinite)||w>=e||s>=n||w< -180||e>180||s< -90||n>90)throw new Error('Enter a valid WGS84 area (west < east, south < north).');
+  return bounds.join(',');
+}
+async function loadLiveLayer(L){
+  if(L.loading)return;
+  L.loading=true;L.error='';renderLayers();
+  try{
+    const area=countyArea();
+    const params=new URLSearchParams({where:'1=1',geometry:area,geometryType:'esriGeometryEnvelope',inSR:'4326',spatialRel:'esriSpatialRelIntersects',returnIdsOnly:'true',f:'json'});
+    const idResponse=await gisRequest(`${layerUrl(L)}/query?${params}`);
+    if(!Array.isArray(idResponse.objectIds)&&idResponse.objectIds!==null)throw new Error('County GIS did not return feature IDs.');
+    const ids=[...new Set(idResponse.objectIds||[])].sort((a,b)=>a-b),parts=[];let count=0;
+    async function batch(batchIds){
+      const q=new URLSearchParams({objectIds:batchIds.join(','),outFields:idResponse.objectIdFieldName||'*',returnGeometry:'true',outSR:'2233',geometryPrecision:'2',f:'json'});
+      const result=await gisRequest(`${layerUrl(L)}/query?${q}`);
+      if(!Array.isArray(result.features))throw new Error('County GIS did not return features.');
+      if(result.exceededTransferLimit){
+        if(batchIds.length===1)throw new Error('County GIS returned incomplete geometry.');
+        const half=Math.ceil(batchIds.length/2);await batch(batchIds.slice(0,half));await batch(batchIds.slice(half));return;
+      }
+      if(result.features.length!==batchIds.length)throw new Error('County GIS returned an incomplete batch. Try Refresh live.');
+      const parsed=parseLayerText(JSON.stringify(result));parts.push(...parsed.parts);count+=parsed.count;
+    }
+    let next=0,failed=false;
+    const workers=await Promise.allSettled(Array.from({length:3},async()=>{
+      while(next<ids.length&&!failed){const i=next;next+=500;try{await batch(ids.slice(i,i+500));}catch(e){failed=true;throw e;}}
+    }));
+    const failure=workers.find(r=>r.status==='rejected');if(failure)throw failure.reason;
+    if(count&&!parts.length)throw new Error('County GIS returned no usable geometry.');
+    // Replace only after the entire query succeeds; a failed refresh preserves the previous map.
+    clearLayer(L);mergeLayer(L,{parts,count,capped:false});L.liveAt=new Date();L.area=area;
+    if(!parts.length)L.data=null;
+    for(const p of photos)p.overlayPath=null;
+    if(P().pairs.length<2)fitMap();
+  }catch(e){L.error=e.message||'County GIS could not be loaded.';}
+  finally{L.loading=false;renderLayers();drawAll();}
+}
+async function refreshCounty(){await Promise.allSettled(LAYERS.map(loadLiveLayer));}
+$('refreshCounty').addEventListener('click',refreshCounty);
 async function readLayerFiles(L,files){for(const f of files){try{ingest(L,await f.text());}catch(err){toast(err.message);}}}
 function ingest(L,txt){const parsed=parseLayerText(txt);if(!parsed.parts.length)throw new Error('No geometry in that response. Check the area box.');
-  const first=!LAYERS.some(l=>l.data);mergeLayer(L,parsed);for(const p of photos)p.overlayPath=null;renderLayers();
+  if(L.loading)throw new Error('Wait for the live query to finish before importing.');
+  L.liveAt=null;L.error='';const first=!LAYERS.some(l=>l.data);mergeLayer(L,parsed);for(const p of photos)p.overlayPath=null;renderLayers();
   if(first&&P().pairs.length<2)fitMap();drawAll();toast(`${L.label}: added ${parsed.count.toLocaleString()} features`);}
 document.addEventListener('paste',ev=>{if(!pasteTarget||!document.querySelector('#tab-data:not([hidden])'))return;const t=ev.clipboardData.getData('text');if(!t)return;ev.preventDefault();try{ingest(pasteTarget,t);}catch(err){toast(err.message);}});
 $('layerFile').addEventListener('change',ev=>{const L=LAYERS.find(l=>l.id===ev.target.dataset.target);if(L)readLayerFiles(L,[...ev.target.files]);ev.target.value='';});
@@ -713,10 +779,8 @@ let tt=null;function toast(m){const t=$('toast');t.textContent=m;t.classList.add
 new ResizeObserver(()=>{drawAll();}).observe(pcv);new ResizeObserver(()=>{drawAll();}).observe(mcv);
 attach(pcv,'photo');attach(mcv,'map');
 loadState();renderTabs();renderLayers();
-(async()=>{await IDB.open();for(const L of LAYERS){const s=await IDB.get('layer:'+L.id);if(s&&s.parts){L.data={parts:s.parts.map(a=>Float64Array.from(a)),bbox:null};
-    let bb=[Infinity,Infinity,-Infinity,-Infinity];for(const a of L.data.parts)for(let i=0;i<a.length;i+=2){bb[0]=Math.min(bb[0],a[i]);bb[1]=Math.min(bb[1],a[i+1]);bb[2]=Math.max(bb[2],a[i]);bb[3]=Math.max(bb[3],a[i+1]);}
-    L.data.bbox=bb;L.files=s.files;L.capped=s.capped;L.count=s.count;buildLayerCache(L);}}
-  renderLayers();if(P().pairs.length<2)fitMap();for(const p of photos)p.overlayPath=null;drawAll();})();
+// Query the server on every visit so old imports are never mistaken for current GIS data.
+(async()=>{await IDB.open();await refreshCounty();})();
 selectPhoto(0).then(()=>{fitMap();drawAll();});
 })();
 </script>
