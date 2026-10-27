@@ -158,12 +158,14 @@ kbd{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border
       <div class="pane-head">
         <span class="ttl">County GIS</span>
         <span class="grow"></span>
+        <label><input type="checkbox" id="optOrtho" checked> County ortho 2025</label>
         <label><input type="checkbox" id="optRect" checked> Rectified photo</label>
         <input type="range" id="optRectOp" min="0" max="100" value="70" aria-label="Rectified photo opacity">
         <label><input type="checkbox" id="optFlood" checked> FEMA floodplain</label>
       </div>
       <div class="canvas-wrap">
         <canvas id="mapCv" aria-label="Map canvas"></canvas>
+        <div class="readout" style="top:8px;bottom:auto;max-width:90%" id="orthoStatus" role="status">County ortho 2025 · loading…</div>
         <div class="readout" id="mapRead">ft —</div>
         <div class="zoom"><button data-z="map" data-d="1" aria-label="Zoom in map">+</button><button data-z="map" data-d="-1" aria-label="Zoom out map">−</button><button data-z="map" data-d="0" aria-label="Fit map">⤢</button></div>
         <div class="empty" id="mapEmpty"><div><strong>No county layers loaded yet</strong><p>Live county GIS layers load automatically. Open County data to check loading status or retry.</p><button class="btn primary" id="goData">Open County data</button></div></div>
@@ -200,7 +202,7 @@ kbd{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border
       </table></div>
     </div>
     <div class="panel" id="tab-data" hidden>
-      <p class="note">Live layers load automatically from La Plata County Operational Layers for the area below. Refresh after changing the area. Queries fetch feature IDs first, then load every matching feature in batches. File import and paste remain available as a fallback.</p>
+      <p class="note">Live layers load automatically from La Plata County Operational Layers for the area below. Refresh after changing the area. Queries fetch feature IDs first, then load every matching feature in batches. File import and paste remain available as a fallback. The map also displays <a href="https://gis.lpcgov.org/arcgis/rest/services/Orthos/WM2025Orthos2/MapServer" target="_blank" rel="noopener">2025 county orthophotography</a>; use County ortho 2025 to show or hide it.</p>
       <div class="bbox toolbar">
         <span class="muted">Area (WGS84)</span>
         W <input id="bbW" value="-107.905"> S <input id="bbS" value="37.285"> E <input id="bbE" value="-107.835"> N <input id="bbN" value="37.400">
@@ -436,6 +438,42 @@ function buildRect(p){
   $('rectInfo').textContent=W+'×'+Hh+' px · '+ps.toFixed(2)+' ft/px';
 }
 
+/* ---------- Live county orthophoto basemap ---------- */
+const ORTHO_URL='https://gis.lpcgov.org/arcgis/rest/services/Orthos/WM2025Orthos2/MapServer';
+const ortho={image:null,bbox:null,wanted:'',request:0,timer:null};
+function scheduleOrtho(){
+  if(!$('optOrtho').checked){clearTimeout(ortho.timer);ortho.wanted='';ortho.request++;$('orthoStatus').hidden=true;return;}
+  $('orthoStatus').hidden=false;
+  const[w,h]=cssSize(mcv);if(w<2||h<2||!Number.isFinite(mv.s)||mv.s<=0)return;
+  const sw=screenToMap(0,h),ne=screenToMap(w,0),bbox=[sw[0],sw[1],ne[0],ne[1]];
+  const scale=Math.min(DPR(),2048/Math.max(w,h)),width=Math.max(1,Math.round(w*scale)),height=Math.max(1,Math.round(h*scale));
+  const key=bbox.map(v=>v.toFixed(2)).join(',')+':'+width+','+height;
+  if(key===ortho.wanted)return;
+  ortho.wanted=key;const request=++ortho.request;clearTimeout(ortho.timer);
+  $('orthoStatus').textContent='County ortho 2025 · loading…';
+  ortho.timer=setTimeout(async()=>{
+    try{
+      const q=new URLSearchParams({bbox:bbox.join(','),bboxSR:'2233',imageSR:'2233',size:width+','+height,format:'jpg',transparent:'false',dpi:'96',f:'json'});
+      const result=await gisRequest(ORTHO_URL+'/export?'+q);
+      if(request!==ortho.request)return;
+      if(!result.href||!result.extent)throw new Error('No imagery returned.');
+      const image=await new Promise((resolve,reject)=>{
+        const img=new Image(),timer=setTimeout(()=>{img.onload=img.onerror=null;reject(new Error('Imagery timed out.'));},30000);
+        img.onload=()=>{clearTimeout(timer);resolve(img);};img.onerror=()=>{clearTimeout(timer);reject(new Error('Could not load county imagery.'));};
+        img.crossOrigin='anonymous';img.src=result.href;
+      });
+      if(request!==ortho.request)return;
+      const e=result.extent;ortho.image=image;ortho.bbox=[e.xmin,e.ymin,e.xmax,e.ymax];
+      $('orthoStatus').textContent='Imagery: La Plata County · 2025';drawMap();
+    }catch(e){if(request!==ortho.request)return;$('orthoStatus').textContent='County ortho unavailable · toggle to retry';}
+  },200);
+}
+function drawOrtho(ctx){
+  scheduleOrtho();if(!$('optOrtho').checked||!ortho.image)return;
+  const b=ortho.bbox;ctx.save();ctx.translate(b[0],b[3]);ctx.scale((b[2]-b[0])/ortho.image.naturalWidth,-(b[3]-b[1])/ortho.image.naturalHeight);
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(ortho.image,0,0);ctx.restore();
+}
+
 /* ---------- Drawing ---------- */
 function drawAll(){drawPhoto();drawMap();}
 function marker(ctx,sx,sy,label,{sel=false,off=false,pend=false}={}){
@@ -498,8 +536,9 @@ function hexA(col,a){const m=col.match(/^#([0-9a-f]{6})$/i);if(!m)return col;con
 function drawMap(){
   sizeCanvas(mcv);const ctx=mctx,d=DPR(),p=P();
   ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=C['map-bg'];ctx.fillRect(0,0,mcv.width,mcv.height);
-  const any=LAYERS.some(l=>l.data);$('mapEmpty').hidden=any||p.pairs.length>0;
+  const any=LAYERS.some(l=>l.data);$('mapEmpty').hidden=any||p.pairs.length>0||($('optOrtho').checked&&!!ortho.image);
   ctx.setTransform(d*mv.s,0,0,-d*mv.s,d*mv.tx,d*mv.ty);
+  drawOrtho(ctx);
   const px=1/mv.s;
   const F=LAYERS[3];if(F.path&&$('optFlood').checked){ctx.fillStyle=hexA(C.flood,.13);ctx.fill(F.path,'evenodd');ctx.strokeStyle=hexA(C.flood,.7);ctx.lineWidth=1.2*px;ctx.setLineDash([5*px,4*px]);ctx.stroke(F.path);ctx.setLineDash([]);}
   // rectified photo
@@ -734,7 +773,7 @@ document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,sele
   if(e.key==='Backspace'&&mode==='trace'&&activeTrace){e.preventDefault();activeTrace.pts.pop();renderTraces();drawAll();}
   if((e.key==='Delete'||e.key==='Backspace')&&mode==='pair'&&selCp!=null){const p=P();p.pairs=p.pairs.filter(c=>c.id!==selCp);selCp=null;solve(p);saveState();renderCps();renderTraces();drawAll();}});
 document.querySelectorAll('.zoom button').forEach(b=>b.addEventListener('click',()=>{const side=b.dataset.z,d=+b.dataset.d;const cv=side==='photo'?pcv:mcv;const[w,h]=cssSize(cv);if(d===0){side==='photo'?fitPhoto():fitMap();drawAll();}else zoomAt(side,w/2,h/2,d>0?1.5:1/1.5);}));
-['optOverlay','optHorizon','optRect','optRectOp','optFlood'].forEach(id=>$(id).addEventListener('input',drawAll));
+['optOverlay','optHorizon','optOrtho','optRect','optRectOp','optFlood'].forEach(id=>$(id).addEventListener('input',drawAll));
 
 /* ---------- Export ---------- */
 function geojson(){const feats=[];
