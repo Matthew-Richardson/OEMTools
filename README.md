@@ -18,6 +18,18 @@ Existing export filenames receive numbered suffixes. PDF contents remain byte-id
 
 The utility runs entirely in the browser without accounts or network requests. It does not read email. No submitted reports are stored in this repository or uploaded to the website.
 
+## Check a folder for duplicate CTRs
+
+1. Select **Choose folder and check duplicates** in Chrome or Edge.
+2. Choose the folder containing formatted CTR PDFs. Only that folder is scanned, not subfolders.
+3. Review groups with the same employee/crew name and exact work dates. Numbered export/download suffixes are ignored; capitalization and spaces/underscores are normalized.
+4. Choose the copy to **Keep**. Open the PDFs and check **Confirmed duplicate — remove** only for files you have reviewed. Identical contents are labeled; different contents require review because they may be corrected reports.
+5. Select **Remove confirmed duplicates** and confirm the listed removals. Removal is permanent. At least one copy per group is retained.
+
+Nothing is selected for removal by default. Unrecognized filenames and unreadable groups are skipped. Before each deletion, both the retained and removed PDF are re-read; changed or missing files block that removal. Scan again after cleanup.
+
+Run the focused checks with `node test-ctr.cjs`.
+
 ## GitHub Pages
 
 Enable Pages from the default branch, root directory. `index.html` is the tool directory; `ctr-renamer.html` is the self-contained application.
