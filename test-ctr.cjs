@@ -7,8 +7,12 @@ class Element{
 }
 const elements=new Map();
 const context=vm.createContext({console,TextDecoder,Uint8Array,Blob,URL,setTimeout,document:{querySelector(s){if(!elements.has(s))elements.set(s,new Element());return elements.get(s)},createElement:t=>new Element(t)}});
-const html=fs.readFileSync('ctr-renamer.html','utf8'),app=html.slice(html.lastIndexOf('<script>')+8,html.lastIndexOf('</script>'));
+const html=fs.readFileSync('ctr-duplicates.html','utf8'),app=html.slice(html.lastIndexOf('<script>')+8,html.lastIndexOf('</script>'));
 new vm.Script(app);vm.runInContext(app,context);
+const renamer=fs.readFileSync('ctr-renamer.html','utf8');
+new vm.Script(renamer.slice(renamer.lastIndexOf('<script>')+8,renamer.lastIndexOf('</script>')));
+assert(!renamer.includes('scan-duplicates'), 'Renamer must remain separate');
+assert(fs.readFileSync('index.html','utf8').includes('href="ctr-duplicates.html"'), 'Home page links to checker');
 vm.runInContext(`
 async function tests(){
  const base='Jane_Doe_CTR_2026-10-22.pdf';

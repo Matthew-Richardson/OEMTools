@@ -18,7 +18,9 @@ Existing export filenames receive numbered suffixes. PDF contents remain byte-id
 
 The utility runs entirely in the browser without accounts or network requests. It does not read email. No submitted reports are stored in this repository or uploaded to the website.
 
-## Check a folder for duplicate CTRs
+## CTR Duplicate Checker
+
+Open `ctr-duplicates.html` from the OEMTools home page. This standalone tool checks your full filed folder independently of renaming batches. Format incoming reports with the renamer, add them to the filed folder, then scan that folder for duplicates.
 
 1. Select **Choose folder and check duplicates** in Chrome or Edge.
 2. Choose the folder containing formatted CTR PDFs. Only that folder is scanned, not subfolders.
@@ -32,7 +34,7 @@ Run the focused checks with `node test-ctr.cjs`.
 
 ## GitHub Pages
 
-Enable Pages from the default branch, root directory. `index.html` is the tool directory; `ctr-renamer.html` is the self-contained application.
+Enable Pages from the default branch, root directory. `index.html` is the tool directory; `ctr-renamer.html` and `ctr-duplicates.html` are separate self-contained applications.
 
 ## Third-party software
 
