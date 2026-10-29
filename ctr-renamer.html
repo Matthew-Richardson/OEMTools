@@ -1,5 +1,5 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; frame-src blob:; connect-src 'none'; worker-src 'none';"><title>CTR File Renamer</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#182c42;font:15px system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:44px 24px}h1{font-size:34px;letter-spacing:-1px;margin:8px 0}h2{font-size:18px}.eyebrow{font-size:12px;font-weight:750;letter-spacing:2px;color:#286c8b}p{line-height:1.6;color:#516174}.panel{background:white;border:1px solid #dae3eb;border-radius:16px;padding:24px;margin:22px 0}.drop{border:2px dashed #97b9cb;text-align:center;background:#f7fbfd}.drop.over{background:#e0f2fe}button,.pick{border:0;border-radius:8px;padding:11px 16px;background:#176688;color:#fff;font:600 14px system-ui;cursor:pointer;display:inline-block}button:disabled{opacity:.45;cursor:default}button.secondary{background:#e8eff5;color:#26475e}button.link{background:transparent;color:#176688;padding:8px}.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.toolbar span{flex:1}.small{font-size:12px;color:#607286}.grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px}label{display:block;font-size:12px;font-weight:700;color:#42586d}input:not([type=file]){width:100%;margin-top:6px;padding:10px;border:1px solid #b7c6d3;border-radius:7px;font:14px system-ui;color:#182c42}code{overflow-wrap:anywhere;font-size:13px}.filename{padding:12px;background:#f1f6fa;border-radius:8px;margin:14px 0}.notice{color:#916015;background:#fff8e7;padding:10px 12px;border-radius:8px;font-size:13px}.ready{color:#16634a;background:#eaf7f0}.rowhead{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}.original{overflow-wrap:anywhere;font-size:13px;color:#63758a}.actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.foot{font-size:12px;color:#697b8c}#status{min-height:24px;margin-top:10px}input:focus-visible,button:focus-visible,.pick:focus-within{outline:3px solid #74b8e2;outline-offset:2px}@media(max-width:650px){main{padding:24px 14px}.grid{grid-template-columns:1fr}.panel{padding:18px}.rowhead{align-items:flex-start;flex-direction:column}h1{font-size:28px}}.duplicate-file{border-top:1px solid #dae3eb;padding:16px 0}.duplicate-option{display:flex;align-items:center;gap:6px}.duplicate-option input{width:auto!important;margin:0!important}h3{font-size:16px}</style></head><body><main><div class="eyebrow">INCIDENT DOCUMENTS</div><h1>CTR File Renamer</h1><p>Read employee names and work dates from your completed crew time reports.<br>Review the filenames, then export each PDF to your chosen folder.</p><section class="panel drop" id="drop"><h2>Drop CTR PDFs here</h2><p>Choose one report or a whole batch. Everything stays on this computer.</p><label class="pick">Choose PDFs<input id="files" type="file" accept="application/pdf,.pdf" multiple hidden></label><div class="small" style="margin-top:14px">Built for the La Plata County fillable CTR. Scans and flattened PDFs require manual entries.</div></section><div class="toolbar"><span id="count">No reports loaded</span><button id="folder" class="secondary">Choose export folder</button><button id="export" disabled>Export all PDFs</button><button id="zip" class="secondary" disabled>Download ZIP</button><button id="clear" class="secondary" disabled>Clear</button></div><p id="foldername" class="small">No export folder selected. Choose a folder in Chrome or Edge and allow access when prompted.</p><div id="status" role="status" aria-live="polite"></div><div id="rows"></div><section class="panel"><h2>How filenames work</h2><p><code>Employee_or_Crew_CTR_YYYY-MM-DD_to_YYYY-MM-DD.pdf</code></p><p class="small">One work date produces a single-date filename. Names keep the order entered in the form; spaces become underscores. Multiple employees require a crew name. Dates accept two- or four-digit years, such as 10-22-26 or 10/22/2026. Two-digit years mean 2000–2099. Dates without a year are left for review. Start and end dates refer to the two work-date columns, not the signature date.</p><p class="small">Use “Open PDF” to check a report. Correct any field before downloading. Downloaded PDFs contain the original bytes, preserving form fields and signatures. Existing filenames get a numbered suffix, such as _2. Original files are never overwritten. This tool does not read Outlook or move files into incident folders.</p></section><div class="foot">Offline utility · No accounts · No network requests · PDF parsing: pdf-lib (MIT); ZIP packaging: JSZip (MIT)</div></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; frame-src blob:; connect-src 'none'; worker-src 'none';"><title>CTR Tools</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#182c42;font:15px system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:44px 24px}h1{font-size:34px;letter-spacing:-1px;margin:8px 0}h2{font-size:18px}.eyebrow{font-size:12px;font-weight:750;letter-spacing:2px;color:#286c8b}p{line-height:1.6;color:#516174}.panel{background:white;border:1px solid #dae3eb;border-radius:16px;padding:24px;margin:22px 0}.drop{border:2px dashed #97b9cb;text-align:center;background:#f7fbfd}.drop.over{background:#e0f2fe}button,.pick{border:0;border-radius:8px;padding:11px 16px;background:#176688;color:#fff;font:600 14px system-ui;cursor:pointer;display:inline-block}button:disabled{opacity:.45;cursor:default}button.secondary{background:#e8eff5;color:#26475e}button.link{background:transparent;color:#176688;padding:8px}.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.toolbar span{flex:1}.small{font-size:12px;color:#607286}.grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px}label{display:block;font-size:12px;font-weight:700;color:#42586d}input:not([type=file]){width:100%;margin-top:6px;padding:10px;border:1px solid #b7c6d3;border-radius:7px;font:14px system-ui;color:#182c42}code{overflow-wrap:anywhere;font-size:13px}.filename{padding:12px;background:#f1f6fa;border-radius:8px;margin:14px 0}.notice{color:#916015;background:#fff8e7;padding:10px 12px;border-radius:8px;font-size:13px}.ready{color:#16634a;background:#eaf7f0}.rowhead{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}.original{overflow-wrap:anywhere;font-size:13px;color:#63758a}.actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.foot{font-size:12px;color:#697b8c}#status{min-height:24px;margin-top:10px}input:focus-visible,button:focus-visible,.pick:focus-within{outline:3px solid #74b8e2;outline-offset:2px}@media(max-width:650px){main{padding:24px 14px}.grid{grid-template-columns:1fr}.panel{padding:18px}.rowhead{align-items:flex-start;flex-direction:column}h1{font-size:28px}}.duplicate-file{border-top:1px solid #dae3eb;padding:16px 0}.duplicate-option{display:flex;align-items:center;gap:6px}.duplicate-option input{width:auto!important;margin:0!important}h3{font-size:16px}[hidden]{display:none!important}</style></head><body><main><div class="eyebrow">INCIDENT DOCUMENTS</div><h1>CTR Tools</h1><div class="actions" style="margin:24px 0" aria-label="CTR tools"><button id="tab-rename" aria-pressed="true" aria-controls="rename-tool">Rename CTRs</button><button id="tab-duplicates" class="secondary" aria-pressed="false" aria-controls="duplicate-tool">Check duplicates</button></div><section id="rename-tool"><h2>CTR File Renamer</h2><p>Read employee names and work dates from your completed crew time reports.<br>Review the filenames, then export each PDF to your chosen folder.</p><section class="panel drop" id="drop"><h2>Drop CTR PDFs here</h2><p>Choose one report or a whole batch. Everything stays on this computer.</p><label class="pick">Choose PDFs<input id="files" type="file" accept="application/pdf,.pdf" multiple hidden></label><div class="small" style="margin-top:14px">Built for the La Plata County fillable CTR. Scans and flattened PDFs require manual entries.</div></section><div class="toolbar"><span id="count">No reports loaded</span><button id="folder" class="secondary">Choose export folder</button><button id="export" disabled>Export all PDFs</button><button id="zip" class="secondary" disabled>Download ZIP</button><button id="clear" class="secondary" disabled>Clear</button></div><p id="foldername" class="small">No export folder selected. Choose a folder in Chrome or Edge and allow access when prompted.</p><div id="status" role="status" aria-live="polite"></div><div id="rows"></div><section class="panel"><h2>How filenames work</h2><p><code>Employee_or_Crew_CTR_YYYY-MM-DD_to_YYYY-MM-DD.pdf</code></p><p class="small">One work date produces a single-date filename. Names keep the order entered in the form; spaces become underscores. Multiple employees require a crew name. Dates accept two- or four-digit years, such as 10-22-26 or 10/22/2026. Two-digit years mean 2000–2099. Dates without a year are left for review. Start and end dates refer to the two work-date columns, not the signature date.</p><p class="small">Use “Open PDF” to check a report. Correct any field before downloading. Downloaded PDFs contain the original bytes, preserving form fields and signatures. Existing filenames get a numbered suffix, such as _2. Original files are never overwritten. This tool does not read Outlook or move files into incident folders.</p></section><div class="foot">Offline utility · No accounts · No network requests · PDF parsing: pdf-lib (MIT); ZIP packaging: JSZip (MIT)</div></section><section id="duplicate-tool" hidden><h2>CTR Duplicate Checker</h2><p>Check your filed reports across all batches. Select the folder containing all formatted CTR PDFs, including newly received reports, to find matching employee or crew names and work dates.</p><section class="panel"><h2>Analyze formatted PDFs</h2><p>Choose one copy to keep in each matching group. Open the reports and confirm which files are duplicates before removing them. Reports with different contents are flagged for review.</p><div class="actions"><button id="scan-duplicates">Choose folder and check duplicates</button><button id="remove-duplicates" class="secondary" disabled>Remove confirmed duplicates</button></div><p id="duplicate-status" class="small" role="status" aria-live="polite">Checks PDFs directly in the selected folder. Subfolders are not scanned. Removal is permanent and requires your confirmation.</p></section><div id="duplicates"></div><section class="panel"><h2>Formatted filenames</h2><p><code>Employee_or_Crew_CTR_YYYY-MM-DD_to_YYYY-MM-DD.pdf</code></p><p class="small">Single-date reports are supported. Capitalization, spaces versus underscores, and numbered copy suffixes are ignored when matching. Both work dates must match. Unrecognized filenames and unreadable groups are skipped.</p><p class="small">Use the Rename CTRs tab to format each incoming batch, then run this checker on your full filed folder.</p></section><p class="foot">Offline utility · No accounts · No network requests · Everything stays on this computer</p></section></main>
 
 <script>
 !function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define(["exports"],e):e((t=t||self).PDFLib={})}(this,(function(t){"use strict";
@@ -78,4 +78,129 @@ $('#export').onclick=async()=>{
  finally{busy=false;refresh()}
 };
 
+</script><script id="duplicate-script">
+(function(){
+let busy=false;const $=s=>document.querySelector(s);
+function dateValue(s){s=String(s||'').trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);let y,mo,d;if(m){[,y,mo,d]=m}else{m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2}|\d{4})$/);if(!m)return '';[,mo,d,y]=m}y=String(y).length===2?2000+Number(y):Number(y);mo=+mo;d=+d;const t=new Date(Date.UTC(y,mo-1,d));if(y<1900||y>2200||t.getUTCFullYear()!==y||t.getUTCMonth()!==mo-1||t.getUTCDate()!==d)return '';return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+function elem(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
+function refresh(){refreshDuplicates()}
+// Formatted CTR filenames are the identity source; both work dates must match.
+function ctrIdentity(name){
+ const m=name.normalize('NFKC').match(/^(.+)_CTR_(\d{4}-\d{2}-\d{2})(?:_to_(\d{4}-\d{2}-\d{2}))?(?:(?:_\d+)|(?: \(\d+\)))*\.pdf$/i);
+ if(!m)return null;
+ const start=dateValue(m[2]),end=dateValue(m[3]||m[2]);
+ const person=m[1].replace(/[_\s]+/g,' ').trim().toLowerCase();
+ if(!person||!start||!end||end<start)return null;
+ return {key:JSON.stringify([person,start,end]),label:`${m[1].replace(/_/g,' ')} · ${start}${end!==start?' to '+end:''}`};
+}
+function sameBytes(a,b){return a.length===b.length&&a.every((v,i)=>v===b[i])}
+let duplicateFolder=null,duplicateGroups=[];
+function clearDuplicates(){
+ for(const g of duplicateGroups)for(const f of g.files)if(f.url)URL.revokeObjectURL(f.url);
+ duplicateGroups=[];$('#duplicates').replaceChildren();
+}
+function duplicateSelection(){return duplicateGroups.flatMap(g=>g.files.filter(f=>f!==g.keep&&f.selected).map(f=>({g,f})))}
+function refreshDuplicates(){
+ $('#scan-duplicates').disabled=busy;
+ $('#remove-duplicates').disabled=busy||!duplicateSelection().length;
+ for(const control of $('#duplicates').querySelectorAll('input,button'))control.disabled=busy;
+ for(const g of duplicateGroups)if(g.keep.removeInput)g.keep.removeInput.disabled=true;
+}
+function renderDuplicates(){
+ $('#duplicates').replaceChildren();
+ for(const [index,g] of duplicateGroups.entries()){
+  const card=elem('section','panel');card.append(elem('h3','',g.label));
+  card.append(elem('p','small','Choose one copy to keep. Check only the other files you have confirmed are duplicates.'));
+  const update=()=>{
+   for(const f of g.files){
+    f.keepInput.checked=g.keep===f;f.removeInput.disabled=busy||g.keep===f;
+    f.removeInput.checked=f.selected;
+    f.comparison.textContent=g.keep===f?'Keeping this copy':sameBytes(f.bytes,g.keep.bytes)?'Identical PDF contents':'Different PDF contents — open both and review before confirming';
+    f.comparison.className=sameBytes(f.bytes,g.keep.bytes)?'small':'notice';
+   }
+   refreshDuplicates();
+   // The retained copy can never be selected for deletion.
+   g.keep.removeInput.disabled=true;
+  };
+  for(const f of g.files){
+   const row=elem('div','duplicate-file');row.append(elem('strong','original',f.name));
+   f.comparison=elem('p','small');row.append(f.comparison);
+   const actions=elem('div','actions');
+   const keepLabel=elem('label','duplicate-option','Keep ');f.keepInput=elem('input');f.keepInput.type='radio';f.keepInput.name='keep-'+index;
+   f.keepInput.onchange=()=>{if(busy)return;g.keep=f;g.files.forEach(item=>item.selected=false);update()};keepLabel.prepend(f.keepInput);
+   const removeLabel=elem('label','duplicate-option','Confirmed duplicate — remove ');f.removeInput=elem('input');f.removeInput.type='checkbox';
+   f.removeInput.onchange=()=>{if(busy)return;f.selected=f.removeInput.checked&&f!==g.keep;refreshDuplicates();g.keep.removeInput.disabled=true};removeLabel.prepend(f.removeInput);
+   const open=elem('button','link','Open PDF');open.onclick=()=>{if(busy)return;if(!f.url)f.url=URL.createObjectURL(new Blob([f.bytes],{type:'application/pdf'}));const a=elem('a');a.href=f.url;a.target='_blank';a.rel='noopener';a.click()};
+   actions.append(keepLabel,removeLabel,open);row.append(actions);card.append(row);
+  }
+  $('#duplicates').append(card);update();
+ }
+ refreshDuplicates();
+ for(const g of duplicateGroups)g.keep.removeInput.disabled=true;
+}
+async function scanDuplicateFolder(){
+ clearDuplicates();const groups=new Map();let pdfs=0,skipped=0,unreadable=0;
+ for await(const handle of duplicateFolder.values()){
+  if(handle.kind!=='file'||!/^.*\.pdf$/i.test(handle.name))continue;
+  pdfs++;const identity=ctrIdentity(handle.name);if(!identity){skipped++;continue}
+  if(!groups.has(identity.key))groups.set(identity.key,{label:identity.label,files:[]});
+  groups.get(identity.key).files.push({name:handle.name,handle,selected:false});
+ }
+ for(const g of groups.values()){
+  if(g.files.length<2)continue;
+  g.files.sort((a,b)=>a.name.length-b.name.length||a.name.localeCompare(b.name));
+  let valid=true;
+  for(const f of g.files){try{f.bytes=new Uint8Array(await (await f.handle.getFile()).arrayBuffer());if(!new TextDecoder().decode(f.bytes.slice(0,1024)).includes('%PDF-'))throw Error('Not PDF')}catch{valid=false;unreadable++}}
+  if(valid){g.keep=g.files[0];duplicateGroups.push(g)}
+ }
+ renderDuplicates();
+ $('#duplicate-status').textContent=`“${duplicateFolder.name}”: ${pdfs} PDFs checked; ${duplicateGroups.length} possible duplicate group(s). ${skipped} filename(s) not recognized; ${unreadable} unreadable file(s). Subfolders are not scanned. Nothing is selected for removal.`;
+}
+$('#scan-duplicates').onclick=async()=>{
+ if(busy)return;
+ if(typeof globalThis.showDirectoryPicker!=='function'){$('#duplicate-status').textContent='Folder cleanup requires Chrome or Edge. Open this tool there and choose the folder containing your formatted CTRs.';return}
+ busy=true;refresh();refreshDuplicates();
+ try{const folder=await globalThis.showDirectoryPicker({mode:'readwrite',id:'ctr-duplicates'});duplicateFolder=folder;$('#duplicate-status').textContent='Checking formatted CTRs…';await scanDuplicateFolder()}
+ catch(e){if(e.name!=='AbortError'){$('#duplicate-status').textContent='Could not finish checking the folder. Check access and scan again.';clearDuplicates()}}
+ finally{busy=false;refresh();renderDuplicates()}
+};
+$('#remove-duplicates').onclick=async()=>{
+ if(busy)return;const selected=duplicateSelection();if(!selected.length)return;
+ const details=selected.map(({g,f})=>`REMOVE: ${f.name}\nKEEP: ${g.keep.name}`).join('\n\n');
+ if(!globalThis.confirm(`Permanently remove ${selected.length} confirmed duplicate PDF(s) from “${duplicateFolder.name}”? This cannot be undone by this tool.\n\n${details}`))return;
+ busy=true;refresh();refreshDuplicates();let removed=0;const failed=[];
+ try{
+  for(const {g,f} of selected){
+   try{
+    // Re-read both paths. Replaced, edited, or missing files invalidate approval.
+    const keepHandle=await duplicateFolder.getFileHandle(g.keep.name);
+    const removeHandle=await duplicateFolder.getFileHandle(f.name);
+    const keepBytes=new Uint8Array(await (await keepHandle.getFile()).arrayBuffer());
+    const removeBytes=new Uint8Array(await (await removeHandle.getFile()).arrayBuffer());
+    if(!sameBytes(keepBytes,g.keep.bytes)||!sameBytes(removeBytes,f.bytes))throw Error('File changed');
+    await duplicateFolder.removeEntry(f.name);removed++;
+   }catch{failed.push(f.name)}
+  }
+ }finally{
+  clearDuplicates();busy=false;refresh();refreshDuplicates();
+  $('#duplicate-status').textContent=`Removed ${removed} confirmed duplicate PDF(s).`+(failed.length?` Not removed (changed, missing, or access denied): ${failed.join(', ')}.`:'')+' Scan the folder again to check remaining reports.';
+ }
+};
+
+
+
+
+})();
+</script><script id="tool-tabs">
+(function(){
+const tabs=[['rename','Rename CTRs'],['duplicates','Check duplicates']];
+function selectTool(){
+ const active=location.hash==='#duplicates'?'duplicates':'rename';
+ document.querySelector('#rename-tool').hidden=active!=='rename';
+ document.querySelector('#duplicate-tool').hidden=active!=='duplicates';
+ for(const [name]of tabs){const button=document.querySelector('#tab-'+name);button.setAttribute('aria-pressed',String(name===active));button.className=name===active?'':'secondary'}
+}
+for(const [name]of tabs)document.querySelector('#tab-'+name).onclick=()=>{location.hash='#'+name;selectTool()};
+addEventListener('hashchange',selectTool);selectTool();
+})();
 </script></body></html>

@@ -7,12 +7,23 @@ class Element{
 }
 const elements=new Map();
 const context=vm.createContext({console,TextDecoder,Uint8Array,Blob,URL,setTimeout,document:{querySelector(s){if(!elements.has(s))elements.set(s,new Element());return elements.get(s)},createElement:t=>new Element(t)}});
-const html=fs.readFileSync('ctr-duplicates.html','utf8'),app=html.slice(html.lastIndexOf('<script>')+8,html.lastIndexOf('</script>'));
-new vm.Script(app);vm.runInContext(app,context);
-const renamer=fs.readFileSync('ctr-renamer.html','utf8');
-new vm.Script(renamer.slice(renamer.lastIndexOf('<script>')+8,renamer.lastIndexOf('</script>')));
-assert(!renamer.includes('scan-duplicates'), 'Renamer must remain separate');
-assert(fs.readFileSync('index.html','utf8').includes('href="ctr-duplicates.html"'), 'Home page links to checker');
+const html=fs.readFileSync('ctr-renamer.html','utf8');
+const scripts=[...html.matchAll(/<script(?: [^>]*)?>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+scripts.forEach(s=>new vm.Script(s));
+const duplicate=html.match(/<script id="duplicate-script">([\s\S]*?)<\/script>/)[1];
+vm.runInContext(duplicate.replace(/^[\s]*\(function\(\)\{/, '').replace(/\}\)\(\);\s*$/, ''),context);
+assert(html.includes('id="rename-tool"') && html.includes('id="duplicate-tool"'));
+assert(fs.readFileSync('index.html','utf8').includes('Open CTR Tools'));
+context.location={hash:''};context.addEventListener=()=>{};
+const tabScript=html.match(/<script id="tool-tabs">([\s\S]*?)<\/script>/)[1];
+vm.runInContext(tabScript,context);
+assert.equal(elements.get('#rename-tool').hidden,false);
+assert.equal(elements.get('#duplicate-tool').hidden,true);
+elements.get('#tab-duplicates').onclick();
+assert.equal(elements.get('#rename-tool').hidden,true);
+assert.equal(elements.get('#duplicate-tool').hidden,false);
+elements.get('#tab-rename').onclick();
+assert.equal(elements.get('#rename-tool').hidden,false);
 vm.runInContext(`
 async function tests(){
  const base='Jane_Doe_CTR_2026-10-22.pdf';

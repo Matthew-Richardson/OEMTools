@@ -4,7 +4,7 @@ Utilities for emergency-management workflows.
 
 ## CTR File Renamer
 
-Open `ctr-renamer.html` in Chrome or Edge, or use the GitHub Pages site.
+Open **CTR Tools** (`ctr-renamer.html`) in Chrome or Edge and select **Rename CTRs**.
 
 1. Add completed fillable CTR PDFs.
 2. Review employee names and work dates.
@@ -20,7 +20,7 @@ The utility runs entirely in the browser without accounts or network requests. I
 
 ## CTR Duplicate Checker
 
-Open `ctr-duplicates.html` from the OEMTools home page. This standalone tool checks your full filed folder independently of renaming batches. Format incoming reports with the renamer, add them to the filed folder, then scan that folder for duplicates.
+Open **CTR Tools** from the OEMTools home page and select **Check duplicates**. This tab checks your full filed folder independently of renaming batches. Format incoming reports with the renamer, add them to the filed folder, then scan that folder for duplicates.
 
 1. Select **Choose folder and check duplicates** in Chrome or Edge.
 2. Choose the folder containing formatted CTR PDFs. Only that folder is scanned, not subfolders.
@@ -34,7 +34,7 @@ Run the focused checks with `node test-ctr.cjs`.
 
 ## GitHub Pages
 
-Enable Pages from the default branch, root directory. `index.html` is the tool directory; `ctr-renamer.html` and `ctr-duplicates.html` are separate self-contained applications.
+Enable Pages from the default branch, root directory. `index.html` is the tool directory; `ctr-renamer.html` contains both tools in separate tabs. Old `ctr-duplicates.html` links redirect to the duplicate checker tab.
 
 ## Third-party software
 
